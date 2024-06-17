@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1)  # (B, 32, 14, 14)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1) # (B, 64, 7, 7)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1) # (B, 128, 4, 4)
-        self.fc1 = nn.Linear(128*4*4, 256)
-        self.fc2 = nn.Linear(256, 12)  # Latent space of dimension 12
+        self.conv1 = nn.Conv2d(1, 8, kernel_size=3, stride=2, padding=1)  # (B, 8, 14, 14)
+        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1) # (B, 16, 7, 7)
+        self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1) # (B, 32, 4, 4)
+        self.fc1 = nn.Linear(32*4*4, 64)
+        self.fc2 = nn.Linear(64, 12)  # Latent space of dimension 12
 
     def forward(self, x):
         x = torch.relu(self.conv1(x))
@@ -30,17 +30,17 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
-        self.fc1 = nn.Linear(12, 256)
-        self.fc2 = nn.Linear(256, 128*4*4)
-        self.deconv1 = nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.deconv2 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.fc1 = nn.Linear(12, 64)
+        self.fc2 = nn.Linear(64, 32*4*4)
+        self.deconv1 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.deconv2 = nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1)
         # todo is it ok that padding=3 here??
-        self.deconv3 = nn.ConvTranspose2d(32, 1, kernel_size=3, stride=2, padding=3, output_padding=1)
+        self.deconv3 = nn.ConvTranspose2d(8, 1, kernel_size=3, stride=2, padding=3, output_padding=1)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        x = x.view(x.size(0), 128, 4, 4)
+        x = x.view(x.size(0), 32, 4, 4)
         x = torch.relu(self.deconv1(x))
         x = torch.relu(self.deconv2(x))
         x = torch.sigmoid(self.deconv3(x))  # Sigmoid activation for final layer to match the input range [0, 1]
