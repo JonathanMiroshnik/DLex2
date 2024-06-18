@@ -79,6 +79,55 @@ def imshow(img):
     plt.show()
 
 
+class Classifier(nn.Module):
+    def __init__(self):
+        super(Classifier, self).__init__()
+        self.encoder = Encoder()
+        self.lay1 = nn.Linear(12, 10)
+        self.lay2 = nn.Linear(10, 10)
+
+    def forward(self, x):
+        latent = self.encoder(x)
+        x = torch.relu(self.lay1(latent))
+        x = torch.sigmoid(self.lay2(x))
+        return x
+
+
+def train_autoencoder(cur_autoencoder, cur_criterion, cur_optimizer, cur_train_loader):
+    # Training loop
+    num_epochs = 20
+    for epoch in range(num_epochs):
+        for data in cur_train_loader:
+            inputs, _ = data
+            cur_optimizer.zero_grad()
+            outputs = cur_autoencoder(inputs)
+            loss = cur_criterion(outputs, inputs)
+            loss.backward()
+            cur_optimizer.step()
+
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+
+    # Evaluate the autoencoder
+    cur_autoencoder.eval()
+    # dataiter = iter(test_loader)
+    # images, labels = dataiter.next()
+
+
+def train_classifier(cur_classifier, cur_criterion, cur_optimizer, cur_train_loader):
+    # Training loop
+    num_epochs = 20
+    for epoch in range(num_epochs):
+        for data in cur_train_loader:
+            inputs, true_outputs = data
+            cur_optimizer.zero_grad()
+            outputs = cur_classifier(inputs)
+            loss = cur_criterion(outputs, true_outputs)
+            loss.backward()
+            cur_optimizer.step()
+
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+
+
 if __name__ == '__main__':
     # Load the MNIST dataset
     transform = transforms.Compose([transforms.ToTensor()])
@@ -88,37 +137,57 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
+    # Q1 - Autoencoder
+    print("Training Autoencoder")
+
     # Define the autoencoder, loss function, and optimizer
     autoencoder = Autoencoder()
     criterion = nn.L1Loss()
     optimizer = optim.Adam(autoencoder.parameters(), lr=0.001)
 
-    # Training loop
-    num_epochs = 20
-    for epoch in range(num_epochs):
-        for data in train_loader:
-            inputs, _ = data
-            optimizer.zero_grad()
-            outputs = autoencoder(inputs)
-            loss = criterion(outputs, inputs)
-            loss.backward()
-            optimizer.step()
+    train_autoencoder(autoencoder, criterion, optimizer, train_loader)
 
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+    # Q2 - Classifier
+    print("Training Classifier")
 
-    # Evaluate the autoencoder
-    autoencoder.eval()
-    dataiter = iter(test_loader)
-    images, labels = dataiter.next()
+    classifier = Classifier()
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(classifier.parameters(), lr=0.001)
 
-    # Get reconstructed images
-    reconstructed = autoencoder(images)
+    train_classifier(classifier, criterion, optimizer, train_loader)
 
-    # Show original images
-    print('Original Images')
-    imshow(torchvision.utils.make_grid(images))
+    # Q3 - Decoding
+    print("Training Decoder")
 
-    # Show reconstructed images
-    print('Reconstructed Images')
-    imshow(torchvision.utils.make_grid(reconstructed.detach()))
+    for param in classifier.encoder.parameters():
+        param.requires_grad = False
+
+    second_autoencoder = Autoencoder()
+    second_autoencoder.encoder = classifier.encoder
+    criterion = nn.L1Loss()
+    optimizer = optim.Adam(second_autoencoder.parameters(), lr=0.001)
+
+    train_autoencoder(second_autoencoder, criterion, optimizer, train_loader)
+
+    # Q4 - Too few Examples
+    print("Too few Examples")
+    indices = torch.arange(100)
+    train_loader_CLS = torch.utils.data.Subset(train_dataset, indices)
+    train_loader_CLS = torch.utils.data.DataLoader(train_loader_CLS,
+                                                   batch_size=10, shuffle=True, num_workers=0)
+
+    classifier = Classifier()
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(classifier.parameters(), lr=0.001)
+
+    train_classifier(classifier, criterion, optimizer, train_loader_CLS)
+
+    autoencoder = Autoencoder()
+    criterion = nn.L1Loss()
+    optimizer = optim.Adam(autoencoder.parameters(), lr=0.001)
+
+    train_autoencoder(autoencoder, criterion, optimizer, train_loader_CLS)
+
+    # Q5 - Transfer Learning
+    print("Transfer Learning")
 

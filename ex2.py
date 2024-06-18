@@ -59,6 +59,19 @@ class FC_Layer(nn.Module):
         return x
 
 
+class Classifier(nn.Module):
+    def __init__(self):
+        super(Classifier, self).__init__()
+        self.encoder = Encoder()
+        self.lay1 = nn.Linear(12, 10)
+        self.lay2 = nn.Linear(10, 10)
+
+    def forward(self, x):
+        latent = self.encoder(x)
+        x = torch.relu(self.lay1(latent))
+        x = torch.sigmoid(self.lay2(x))
+        return x
+
 class Autoencoder(nn.Module):
     def __init__(self):
         super(Autoencoder, self).__init__()
@@ -88,6 +101,9 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
+    # Q1 - Autoencoder
+    print("Training Autoencoder")
+
     # Define the autoencoder, loss function, and optimizer
     autoencoder = Autoencoder()
     criterion = nn.L1Loss()
@@ -111,14 +127,34 @@ if __name__ == '__main__':
     dataiter = iter(test_loader)
     images, labels = dataiter.next()
 
-    # Get reconstructed images
-    reconstructed = autoencoder(images)
+    # # Get reconstructed images
+    # reconstructed = autoencoder(images)
+    #
+    # # Show original images
+    # print('Original Images')
+    # imshow(torchvision.utils.make_grid(images))
+    #
+    # # Show reconstructed images
+    # print('Reconstructed Images')
+    # imshow(torchvision.utils.make_grid(reconstructed.detach()))
 
-    # Show original images
-    print('Original Images')
-    imshow(torchvision.utils.make_grid(images))
+    # Q2 - Classifier
+    print("Training Classifier")
 
-    # Show reconstructed images
-    print('Reconstructed Images')
-    imshow(torchvision.utils.make_grid(reconstructed.detach()))
+    classifier = Classifier()
+    criterion = nn.L2Loss()
+    optimizer = optim.Adam(classifier.parameters(), lr=0.001)
+
+    # Training loop
+    num_epochs = 20
+    for epoch in range(num_epochs):
+        for data in train_loader:
+            inputs, true_outputs = data
+            optimizer.zero_grad()
+            outputs = classifier(inputs)
+            loss = criterion(outputs, true_outputs)
+            loss.backward()
+            optimizer.step()
+
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
