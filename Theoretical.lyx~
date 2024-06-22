@@ -83,7 +83,9 @@ IDL EX2 Nadav Eisen and Yonatan Microshnik
 Question 1:
 \end_layout
 
-\begin_layout Standard
+\begin_layout Paragraph*
+
+\series medium
 We'll prove that convolution is time/space invariant, where 
 \begin_inset Formula $x$
 \end_inset
@@ -111,7 +113,9 @@ We'll prove that convolution is time/space invariant, where
 .
 \end_layout
 
-\begin_layout Standard
+\begin_layout Paragraph*
+
+\series medium
 \begin_inset Formula 
 \[
 \left(g*f_{o}\right)\left(x\right)=\sum_{y}g\left(x-y\right)\cdot f_{o}\left(y\right)
@@ -122,7 +126,9 @@ We'll prove that convolution is time/space invariant, where
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Paragraph*
+
+\series medium
 \begin_inset Formula 
 \[
 =\sum_{y}g\left(x-y\right)\cdot f\left(y+o\right)=\sum_{y+z=x+o}g\left(y\right)\cdot f\left(z\right)
@@ -133,7 +139,9 @@ We'll prove that convolution is time/space invariant, where
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Paragraph*
+
+\series medium
 \begin_inset Formula 
 \[
 =\sum_{y}g\left(\left(x+0\right)-y\right)\cdot f\left(y\right)=\left(g*f\right)\left(x+o\right)
@@ -145,7 +153,41 @@ We'll prove that convolution is time/space invariant, where
 \end_layout
 
 \begin_layout Standard
+i.e, a shift in the input causes the same shift in the output.
+\end_layout
+
+\begin_layout Paragraph*
+
+\series medium
 Therefore, by definition, convolution is time/space invariant.
+\end_layout
+
+\begin_layout Part*
+Question 2:
+\end_layout
+
+\begin_layout Section*
+a)
+\end_layout
+
+\begin_layout Standard
+Time space invariant, as if we mark this layer 
+\begin_inset Formula $L$
+\end_inset
+
+ such that for any signal 
+\begin_inset Formula $f$
+\end_inset
+
+ we have 
+\begin_inset Formula $L\left[f\right]\left(x\right)=f\left(x\right)+C$
+\end_inset
+
+, we know of course that if we define an offset signal 
+\begin_inset Formula $f_{o}\left(x\right)=f\left(o+x\right)$
+\end_inset
+
+
 \end_layout
 
 \end_body

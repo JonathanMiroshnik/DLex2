@@ -152,10 +152,105 @@ We'll prove that convolution is time/space invariant, where
 
 \end_layout
 
+\begin_layout Standard
+i.e, a shift in the input causes the same shift in the output.
+\end_layout
+
 \begin_layout Paragraph*
 
 \series medium
 Therefore, by definition, convolution is time/space invariant.
+\end_layout
+
+\begin_layout Part*
+Question 2:
+\end_layout
+
+\begin_layout Section*
+a)
+\end_layout
+
+\begin_layout Standard
+Time space invariant, as if we mark this layer 
+\begin_inset Formula $L$
+\end_inset
+
+ such that for any signal 
+\begin_inset Formula $f$
+\end_inset
+
+ we have 
+\begin_inset Formula $L\left[f\right]\left(x\right)=f\left(x\right)+C$
+\end_inset
+
+, we know of course that if we define an offset signal 
+\begin_inset Formula $f_{t}\left(x\right)=f\left(t+x\right)$
+\end_inset
+
+, we get that:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+L\left[f_{t}\right]\left(x\right)=f_{t}\left(x\right)+C=f\left(t+x\right)+C=L\left[f\right]\left(t+x\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+i.e, a shift in the input causese the same shift in the output.
+\end_layout
+
+\begin_layout Section*
+b)
+\end_layout
+
+\begin_layout Standard
+Time space invariant, as if we mark this layer 
+\begin_inset Formula $L$
+\end_inset
+
+ such that for any signal 
+\begin_inset Formula $f$
+\end_inset
+
+ we have 
+\begin_inset Formula $L\left[f\right]\left(x\right)=\begin{pmatrix}ReLu\left(f\left(x\right)_{1}\right)\\
+\vdots\\
+ReLu\left(f\left(x\right)_{n}\right)
+\end{pmatrix}$
+\end_inset
+
+, we know of course that if we define an offset signal 
+\begin_inset Formula $f_{t}\left(x\right)=f\left(t+x\right)$
+\end_inset
+
+, we get that:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+L\left[f_{t}\right]\left(x\right)=\begin{pmatrix}ReLu\left(f_{t}\left(x\right)_{1}\right)\\
+\vdots\\
+ReLu\left(f_{t}\left(x\right)_{n}\right)
+\end{pmatrix}=\begin{pmatrix}ReLu\left(f\left(t+x\right)_{1}\right)\\
+\vdots\\
+ReLu\left(f\left(t+x\right)_{n}\right)
+\end{pmatrix}=L\left[f\right]\left(t+x\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+i.e, a shift in the input causese the same shift in the output.
 \end_layout
 
 \end_body
