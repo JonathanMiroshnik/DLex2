@@ -447,6 +447,10 @@ if __name__ == '__main__':
 
     train_autoencoder(second_autoencoder, criterion, optimizer, train_loader, test_loader)
 
+    torch.save(second_autoencoder, 'modelQ3.pth')
+
+    compare_images(second_autoencoder, test_loader)
+
     # Q4 - Too few Examples
     print("Too few Examples")
     indices = torch.arange(100)
@@ -458,17 +462,19 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(classifier.parameters(), lr=0.001)
 
-    train_classifier(classifier, criterion, optimizer, train_loader_CLS)
+    train_classifier(classifier, criterion, optimizer, train_loader_CLS, test_loader)
+
+    torch.save(classifier, 'modelQ4.pth')
+
+    # Q5 - Transfer Learning
+    autoencoder = torch.load('modelQ1.pth')
 
     third_autoencoder = Autoencoder().to(device)
     criterion = nn.L1Loss()
     optimizer = optim.Adam(third_autoencoder.parameters(), lr=0.001)
 
-    train_autoencoder(third_autoencoder, criterion, optimizer, train_loader_CLS, test_loader)
-
-    # Q5 - Transfer Learning
-    autoencoder = torch.load('modelQ1.pth')
-
     print("Transfer Learning")
     third_autoencoder.encoder = autoencoder.encoder
     train_autoencoder(third_autoencoder, criterion, optimizer, train_loader_CLS, test_loader)
+
+    torch.save(third_autoencoder, 'modelQ5.pth')
