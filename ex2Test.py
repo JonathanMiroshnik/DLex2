@@ -209,11 +209,7 @@ class Classifier(nn.Module):
     def forward(self, x):
         latent = self.encoder(x)
         x = torch.relu(self.lay1(latent))
-
         x = torch.sigmoid(self.lay2(x))
-
-        # x = torch.relu(self.lay2(x))
-        # x = torch.sigmoid(self.lay3(x))
         return x
 
 
@@ -273,6 +269,7 @@ def train_classifier(cur_classifier, cur_criterion, cur_optimizer, cur_train_loa
     # Training loop
     num_epochs = 20
     for epoch in range(num_epochs):
+        accuracy = 0
         for data in cur_test_loader:
             inputs, true_outputs = data
             inputs, true_outputs = inputs.to(device), true_outputs.to(device)
@@ -282,6 +279,8 @@ def train_classifier(cur_classifier, cur_criterion, cur_optimizer, cur_train_loa
 
             outputs = cur_classifier(inputs)
             test_loss = cur_criterion(outputs, true_outputs)
+
+            accuracy += calculate_accuracy(outputs, true_outputs)
 
         for data in cur_train_loader:
             inputs, true_outputs = data
@@ -297,11 +296,12 @@ def train_classifier(cur_classifier, cur_criterion, cur_optimizer, cur_train_loa
             loss.backward()
             cur_optimizer.step()
 
+
         if plot:
             train_losses.append(loss.item())
             test_losses.append(test_loss.item())
 
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}, Test Loss: {test_loss.item():.4f}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Accuracy: {accuracy/(len(test_loader.dataset)):.4f}, Loss: {loss.item():.4f}, Test Loss: {test_loss.item():.4f}')
 
     if plot:
         # Create an array of iterations
@@ -316,6 +316,17 @@ def train_classifier(cur_classifier, cur_criterion, cur_optimizer, cur_train_loa
         plt.grid(True)
         plt.show()
 
+
+def calculate_accuracy(outputs, labels):
+    # Convert one-hot encoded labels to class indices
+    _, labels_class = torch.max(labels, 1)
+
+    # Get the index of the max log-probability for the outputs
+    _, preds = torch.max(outputs, 1)
+
+    # Count correct predictions
+    correct = (preds == labels_class).sum().item()
+    return correct
 
 
 def compare_images(model, dataloader):
@@ -393,62 +404,71 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
-    # Q1 - Autoencoder
-    print("Training Autoencoder")
+    # # Q1 - Autoencoder
+    # print("Training Autoencoder")
+    #
+    # # Define the autoencoder, loss function, and optimizer
+    # autoencoder = Autoencoder()
+    # autoencoder.to(device)
+    #
+    # criterion = nn.L1Loss()
+    # optimizer = optim.Adam(autoencoder.parameters(), lr=0.001)
+    #
+    # train_autoencoder(autoencoder, criterion, optimizer, train_loader, test_loader)
+    #
+    # # Assuming `model` is your PyTorch model
+    # torch.save(autoencoder, 'modelQ1.pth')
+    #
+    # compare_images(autoencoder, test_loader)
+    #
+    # # Q2 - Classifier
+    # print("Training Classifier")
+    #
+    # classifier = Classifier().to(device)
+    # criterion = nn.CrossEntropyLoss()
+    # optimizer = optim.Adam(classifier.parameters(), lr=0.0005)
+    #
+    # train_classifier(classifier, criterion, optimizer, train_loader, test_loader)
+    #
+    # torch.save(classifier, 'modelQ2.pth')
 
-    # Define the autoencoder, loss function, and optimizer
-    autoencoder = Autoencoder()
-    autoencoder.to(device)
+    # Q3 - Decoding
+    print("Training Decoder")
 
+    classifier = torch.load('modelQ2.pth')
+
+    for param in classifier.encoder.parameters():
+        param.requires_grad = False
+
+    second_autoencoder = Autoencoder().to(device)
+    second_autoencoder.encoder = classifier.encoder
     criterion = nn.L1Loss()
-    optimizer = optim.Adam(autoencoder.parameters(), lr=0.001)
+    optimizer = optim.Adam(second_autoencoder.parameters(), lr=0.001)
 
-    train_autoencoder(autoencoder, criterion, optimizer, train_loader, test_loader)
+    train_autoencoder(second_autoencoder, criterion, optimizer, train_loader, test_loader)
 
-    compare_images(autoencoder, test_loader)
-
-    # Q2 - Classifier
-    print("Training Classifier")
+    # Q4 - Too few Examples
+    print("Too few Examples")
+    indices = torch.arange(100)
+    train_loader_CLS = torch.utils.data.Subset(train_dataset, indices)
+    train_loader_CLS = torch.utils.data.DataLoader(train_loader_CLS,
+                                                   batch_size=10, shuffle=True, num_workers=0)
 
     classifier = Classifier().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(classifier.parameters(), lr=0.001)
 
-    train_classifier(classifier, criterion, optimizer, train_loader, test_loader)
+    train_classifier(classifier, criterion, optimizer, train_loader_CLS)
 
-    # # Q3 - Decoding
-    # print("Training Decoder")
-    #
-    # for param in classifier.encoder.parameters():
-    #     param.requires_grad = False
-    #
-    # second_autoencoder = Autoencoder().to(device)
-    # second_autoencoder.encoder = classifier.encoder
-    # criterion = nn.L1Loss()
-    # optimizer = optim.Adam(second_autoencoder.parameters(), lr=0.001)
-    #
-    # train_autoencoder(second_autoencoder, criterion, optimizer, train_loader, test_loader)
+    third_autoencoder = Autoencoder().to(device)
+    criterion = nn.L1Loss()
+    optimizer = optim.Adam(third_autoencoder.parameters(), lr=0.001)
 
-    # # Q4 - Too few Examples
-    # print("Too few Examples")
-    # indices = torch.arange(100)
-    # train_loader_CLS = torch.utils.data.Subset(train_dataset, indices)
-    # train_loader_CLS = torch.utils.data.DataLoader(train_loader_CLS,
-    #                                                batch_size=10, shuffle=True, num_workers=0)
-    #
-    # classifier = Classifier().to(device)
-    # criterion = nn.CrossEntropyLoss()
-    # optimizer = optim.Adam(classifier.parameters(), lr=0.001)
-    #
-    # train_classifier(classifier, criterion, optimizer, train_loader_CLS)
-    #
-    # third_autoencoder = Autoencoder().to(device)
-    # criterion = nn.L1Loss()
-    # optimizer = optim.Adam(third_autoencoder.parameters(), lr=0.001)
-    #
-    # train_autoencoder(third_autoencoder, criterion, optimizer, train_loader_CLS, test_loader)
-    #
+    train_autoencoder(third_autoencoder, criterion, optimizer, train_loader_CLS, test_loader)
+
     # Q5 - Transfer Learning
-    # print("Transfer Learning")
-    # third_autoencoder.encoder = autoencoder.encoder
-    # train_autoencoder(third_autoencoder, criterion, optimizer, train_loader_CLS, test_loader)
+    autoencoder = torch.load('modelQ1.pth')
+
+    print("Transfer Learning")
+    third_autoencoder.encoder = autoencoder.encoder
+    train_autoencoder(third_autoencoder, criterion, optimizer, train_loader_CLS, test_loader)
