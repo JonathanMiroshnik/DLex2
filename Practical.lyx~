@@ -1,0 +1,337 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+IDL EX2 Nadav Eisen and Yonatan Microshnik
+\end_layout
+
+\begin_layout Part*
+Practical Part:
+\end_layout
+
+\begin_layout Part*
+Question 1:
+\end_layout
+
+\begin_layout Paragraph*
+
+\series medium
+We construct the Encoder from 3 convolutional layers, each one having a
+ 3x3 kernel, with stride of 2 and padding of 1, afterwhich we also use two
+ Linear layers.
+ We use non-linearity in the forward function by using ReLU on the output
+ of each convolutional layer.
+\end_layout
+
+\begin_layout Standard
+The Decoder is the exact mirror image of the Encoder, as in, it begins with
+ two Linear layers and ends with 3 convolutional layers.
+ 
+\end_layout
+
+\begin_layout Standard
+We chose this architecture because we knew from the lecture that images
+ with clear patterns can be learned well by convolutional layers, and that
+ adding the Linear layers can add another sort of logic to fully encode
+ the convolutional representations.
+\end_layout
+
+\begin_layout Standard
+We've run the training, and got a graph to show the loss over the training
+ iteration:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q1autoencoderLoss.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And we've also made several example outputs with the final trained model:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q1autoencoderpic1.png
+	scale 15
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q1autoencoderpic2.png
+	scale 15
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q1autoencoderpic3.png
+	scale 15
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q1autoencoderpic4.png
+	scale 15
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q1autoencoderpic5.png
+	scale 15
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part*
+Question 2:
+\end_layout
+
+\begin_layout Standard
+After training the Classifier, we got the following graphs:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q2classifierLoss.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q2classifierAccuracy.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part*
+Question 3:
+\end_layout
+
+\begin_layout Section*
+*)
+\end_layout
+
+\begin_layout Standard
+The loss graph and the example outputs:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q3autoencoderLoss.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q3autoencoderimages.png
+	scale 110
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+a)
+\end_layout
+
+\begin_layout Standard
+The question 1 Autoencoder's Encoder would encode a representation that
+ would be useful for the later decoder to easily get the needed information
+ for the particaular features of a given digit image.
+ On the other hand, the Encoder of question 2 would represent a representation
+ that would allow the creation of a 10-length vector whos values represent
+ the probabilities(given by a softmax activation function at the end) that
+ the given image is a certain class of digit.
+\end_layout
+
+\begin_layout Section*
+b)
+\end_layout
+
+\begin_layout Standard
+Per digit variability is higher in the question 1 autoencoder since it tries
+ to create a feature space that represents imagery of a digit instead of
+ the class of the image.
+\end_layout
+
+\begin_layout Standard
+In question 3, because we use the classifier encoder from question 2, the
+ representations that it creates only give the Decoder a vector of probabilities
+ of which class of digit it is, meaning that each decoder output is more
+ representative of a general example of a digit than a specific digit(IE
+ the input at this situation).
+\end_layout
+
+\begin_layout Section*
+c)
+\end_layout
+
+\begin_layout Standard
+They are either as similar, or there is a slightly higher separation between
+ digits in the question 3 autoencoder because the question 1 autoencoder
+ also better represents the exact value input(the 0 to 1 intensity) and
+ so the question 3 autoencoder creates images that represent digits in a
+ worse and less consistent, and thus more heterogenous way than what we
+ find in question 1.
+\end_layout
+
+\begin_layout Part*
+Question 4:
+\end_layout
+
+\begin_layout Standard
+For the few-examples models, after training the Classifier, we got the following
+ graphs:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q4classifierLoss.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For the few-examples models, after training the Autoencoder, we got the
+ following graphs:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q4classifierAccuracy.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Over-fitting is somewhat scene at the very end wherein we see that the model
+ is able to get a small accuracy boost where we assume it learned the specific
+ represantations of a few specific images.
+\end_layout
+
+\begin_layout Part*
+Question 5:
+\end_layout
+
+\begin_layout Standard
+For the transfer learning, after training the Classifier, we got the following
+ graphs:
+\end_layout
+
+\end_body
+\end_document

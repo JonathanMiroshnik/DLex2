@@ -209,22 +209,28 @@ class Classifier(nn.Module):
     def forward(self, x):
         latent = self.encoder(x)
         x = torch.relu(self.lay1(latent))
-        x = torch.sigmoid(self.lay2(x))
-        return x
+        #x = torch.sigmoid(self.lay2(x))
+        #x = F.softmax(self.lay2(x), dim=0)
+        #x = torch.softmax(self.lay2(x), dim=1)
+        return self.lay2(x)
 
 
-def train_autoencoder(cur_autoencoder, cur_criterion, cur_optimizer, cur_train_loader, cur_test_loader, plot: bool = True):
+def train_autoencoder(cur_autoencoder, cur_criterion, cur_optimizer, cur_train_loader: DataLoader, cur_test_loader: DataLoader, plot: bool = True):
     train_losses = []
     test_losses = []
 
     # Training loop
     num_epochs = 20
     for epoch in range(num_epochs):
+        epoch_loss = 0
+        epoch_test_loss = 0
         for data in cur_test_loader:
             inputs, _ = data
             inputs = inputs.to(device)
             outputs = cur_autoencoder(inputs)
             test_loss = cur_criterion(outputs, inputs)
+            epoch_test_loss += test_loss.item()
+
 
         for data in cur_train_loader:
             inputs, _ = data
@@ -233,16 +239,18 @@ def train_autoencoder(cur_autoencoder, cur_criterion, cur_optimizer, cur_train_l
             cur_optimizer.zero_grad()
             outputs = cur_autoencoder(inputs)
             loss = cur_criterion(outputs, inputs)
+            epoch_loss += loss.item()
             loss.backward()
 
             cur_optimizer.step()
 
-
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}, Test Loss: {test_loss.item():.4f}')
-
         if plot:
-            train_losses.append(loss.item())
-            test_losses.append(test_loss.item())
+            train_losses.append(epoch_loss/len(cur_train_loader.dataset))
+            test_losses.append(epoch_test_loss/len(cur_test_loader.dataset))
+
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {epoch_loss/len(cur_train_loader.dataset):.4f}, Test Loss: {epoch_test_loss/len(cur_test_loader.dataset):.4f}')
+
+
 
     # Evaluate the autoencoder
     cur_autoencoder.eval()
@@ -262,23 +270,30 @@ def train_autoencoder(cur_autoencoder, cur_criterion, cur_optimizer, cur_train_l
         plt.show()
 
 
-def train_classifier(cur_classifier, cur_criterion, cur_optimizer, cur_train_loader, cur_test_loader, plot: bool = True):
+def train_classifier(cur_classifier, cur_criterion, cur_optimizer, cur_train_loader: DataLoader, cur_test_loader: DataLoader, plot: bool = True):
     train_losses = []
     test_losses = []
+    accuracies = []
+
+    LEN_TRAIN_LOADER = len(cur_train_loader.dataset)
+    LEN_TEST_LOADER = len(cur_test_loader.dataset)
 
     # Training loop
-    num_epochs = 20
+    num_epochs = 30
     for epoch in range(num_epochs):
         accuracy = 0
+        epoch_loss = 0
+        epoch_test_loss = 0
         for data in cur_test_loader:
             inputs, true_outputs = data
             inputs, true_outputs = inputs.to(device), true_outputs.to(device)
 
             true_outputs = torch.nn.functional.one_hot(true_outputs, num_classes=10)
-            true_outputs = true_outputs.float()
+            true_outputs = true_outputs.float() #.softmax(dim=1)
 
             outputs = cur_classifier(inputs)
             test_loss = cur_criterion(outputs, true_outputs)
+            epoch_test_loss += test_loss
 
             accuracy += calculate_accuracy(outputs, true_outputs)
 
@@ -290,29 +305,54 @@ def train_classifier(cur_classifier, cur_criterion, cur_optimizer, cur_train_loa
             outputs = cur_classifier(inputs)
 
             true_outputs = torch.nn.functional.one_hot(true_outputs, num_classes=10)
-            true_outputs = true_outputs.float()
+            true_outputs = true_outputs.float() #.softmax(dim=1)
 
             loss = cur_criterion(outputs, true_outputs)
+            epoch_loss += loss
+
             loss.backward()
             cur_optimizer.step()
 
 
         if plot:
-            train_losses.append(loss.item())
-            test_losses.append(test_loss.item())
+            #epoch_loss = epoch_loss.detach()
+            train_losses.append(epoch_loss/LEN_TRAIN_LOADER)
+            accuracies.append(accuracy/LEN_TEST_LOADER)
+            #train_losses = train_losses.cpu()
+            test_losses.append(epoch_test_loss/LEN_TEST_LOADER)
 
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Accuracy: {accuracy/(len(test_loader.dataset)):.4f}, Loss: {loss.item():.4f}, Test Loss: {test_loss.item():.4f}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Accuracy: {accuracy/LEN_TEST_LOADER:.4f}, Loss: {epoch_loss:.4f}, Test Loss: {epoch_test_loss:.4f}')
 
     if plot:
         # Create an array of iterations
         iterations = list(range(len(train_losses)))
 
         # Plotting
-        plt.plot(iterations[1:], train_losses[1:], marker='o', label='Train Loss')
-        plt.plot(iterations[1:], test_losses[1:], marker='x', label='Test Loss')
+        cpu_device = torch.device("cpu")
+
+        train_losses_fin = []
+        test_losses_fin = []
+        # accuracies_fin = []
+
+        for l in train_losses:
+            #print(l.item())
+            train_losses_fin.append(l.item())
+        for l in test_losses:
+            test_losses_fin.append(l.item())
+        # for l in accuracies:
+        #     accuracies_fin.append(l.item())
+        plt.plot(iterations[1:], train_losses_fin[1:], marker='o', label='Train Loss')
+        plt.plot(iterations[1:], test_losses_fin[1:], marker='x', label='Test Loss')
         plt.xlabel('Iteration')
         plt.ylabel('Loss')
-        plt.title('Loss vs Iteration')
+        plt.title('Train and Test Loss over Training Iterations')
+        plt.grid(True)
+        plt.show()
+
+        plt.plot(iterations[1:], accuracies[1:], marker='o', label='Train Loss')
+        plt.xlabel('Iteration')
+        plt.ylabel('Accuracy')
+        plt.title('Accuracy of Test Set over Training Iterations')
         plt.grid(True)
         plt.show()
 
@@ -329,7 +369,43 @@ def calculate_accuracy(outputs, labels):
     return correct
 
 
-def compare_images(model, dataloader):
+# ------------------------------------------------------------------------------
+
+def unnormalize(img, mean, std):
+    img = img * std + mean
+    return img
+
+    # Function to plot images
+def show_images(images, ysubplots, xsubplots=1, titles=None,figsize=(15, 5)):
+    #n = len(images)
+    fig, axes = plt.subplots(xsubplots, ysubplots, figsize=figsize)
+    # for i in range(n):
+    #     ax = axes[i]
+    #     img = images[i].numpy().transpose((1, 2, 0))
+    #     ax.imshow(img)
+    #     if titles:
+    #         ax.set_title(titles[i])
+    #     ax.axis('off')
+
+    if xsubplots == 1:
+        for i in range(ysubplots):
+            ax = axes[i]
+            img = images[i].numpy().transpose((1, 2, 0))
+            ax.imshow(img)
+            if titles:
+                ax.set_title(titles[i])
+                ax.axis('off')
+    else:
+        for i in range(xsubplots):
+            for j in range(ysubplots):
+                ax = axes[i][j]
+                img = images[i*ysubplots+j].numpy().transpose((1, 2, 0))
+                ax.imshow(img)
+                ax.axis('off')
+    plt.show()
+
+
+def compare_images_arrays(model, dataloader, num_examples=5):
     # Assume model and dataloader are already defined
 
     # Check if GPU is available and set the device
@@ -340,25 +416,7 @@ def compare_images(model, dataloader):
     model.eval()
 
     # Function to unnormalize the images (if they were normalized during preprocessing)
-    def unnormalize(img, mean, std):
-        img = img * std + mean
-        return img
 
-    # Function to plot images
-    def show_images(images, titles=None):
-        n = len(images)
-        fig, axes = plt.subplots(1, n, figsize=(15, 5))
-        for i in range(n):
-            ax = axes[i]
-            img = images[i].numpy().transpose((1, 2, 0))
-            ax.imshow(img)
-            if titles:
-                ax.set_title(titles[i])
-            ax.axis('off')
-        plt.show()
-
-    # Get 5 random examples from the dataloader
-    num_examples = 5
     examples = []
     for batch in dataloader:
         inputs, _ = batch
@@ -387,9 +445,11 @@ def compare_images(model, dataloader):
     examples_unnorm = [unnormalize(img, mean, std) for img in examples]
     outputs_unnorm = [unnormalize(img, mean, std) for img in outputs]
 
-    # Plot input and output images side by side
-    for i in range(num_examples):
-        show_images([examples_unnorm[i], outputs_unnorm[i]], titles=['Input', 'Output'])
+    return examples_unnorm, outputs_unnorm
+
+
+
+# ------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
@@ -401,8 +461,10 @@ if __name__ == '__main__':
     train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
     test_dataset = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
 
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+    BATCH_SIZE = 100  # 64
+
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     # # Q1 - Autoencoder
     # print("Training Autoencoder")
@@ -419,9 +481,11 @@ if __name__ == '__main__':
     # # Assuming `model` is your PyTorch model
     # torch.save(autoencoder, 'modelQ1.pth')
     #
-    # compare_images(autoencoder, test_loader)
-    #
-    # # Q2 - Classifier
+    # examples_unnorm, outputs_unnorm = compare_images_arrays(autoencoder, test_loader)
+    # for i in range(len(outputs_unnorm)):
+    #     show_images([examples_unnorm[i], outputs_unnorm[i]], len(outputs_unnorm), figsize=(1, 1))
+
+    # Q2 - Classifier
     # print("Training Classifier")
     #
     # classifier = Classifier().to(device)
@@ -432,49 +496,50 @@ if __name__ == '__main__':
     #
     # torch.save(classifier, 'modelQ2.pth')
 
-    # Q3 - Decoding
-    print("Training Decoder")
-
-    classifier = torch.load('modelQ2.pth')
-
-    for param in classifier.encoder.parameters():
-        param.requires_grad = False
-
-    second_autoencoder = Autoencoder().to(device)
-    second_autoencoder.encoder = classifier.encoder
-    criterion = nn.L1Loss()
-    optimizer = optim.Adam(second_autoencoder.parameters(), lr=0.001)
-
-    train_autoencoder(second_autoencoder, criterion, optimizer, train_loader, test_loader)
-
-    torch.save(second_autoencoder, 'modelQ3.pth')
-
-    compare_images(second_autoencoder, test_loader)
+    # # Q3 - Decoding
+    # print("Training Decoder")
+    #
+    # classifier = torch.load('modelQ2.pth')
+    #
+    # for param in classifier.encoder.parameters():
+    #     param.requires_grad = False
+    #
+    # second_autoencoder = Autoencoder().to(device)
+    # second_autoencoder.encoder = classifier.encoder.to(device)
+    # criterion = nn.L1Loss()
+    # optimizer = optim.Adam(second_autoencoder.parameters(), lr=0.001)
+    #
+    # train_autoencoder(second_autoencoder, criterion, optimizer, train_loader, test_loader)
+    #
+    # torch.save(second_autoencoder, 'modelQ3.pth')
+    #
+    # _, outputs_unnorm = compare_images_arrays(second_autoencoder, test_loader, 50)
+    # show_images(outputs_unnorm, 10, 5, figsize=(3,3))
 
     # Q4 - Too few Examples
-    print("Too few Examples")
+    # print("Too few Examples")
     indices = torch.arange(100)
     train_loader_CLS = torch.utils.data.Subset(train_dataset, indices)
     train_loader_CLS = torch.utils.data.DataLoader(train_loader_CLS,
-                                                   batch_size=10, shuffle=True, num_workers=0)
-
-    classifier = Classifier().to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(classifier.parameters(), lr=0.001)
-
-    train_classifier(classifier, criterion, optimizer, train_loader_CLS, test_loader)
-
-    torch.save(classifier, 'modelQ4.pth')
+                                                   batch_size=64, shuffle=True, num_workers=0)
+    #
+    # classifier = Classifier().to(device)
+    # criterion = nn.CrossEntropyLoss()
+    # optimizer = optim.Adam(classifier.parameters(), lr=0.001)
+    #
+    # train_classifier(classifier, criterion, optimizer, train_loader_CLS, test_loader)
+    #
+    # torch.save(classifier, 'modelQ4.pth')
 
     # Q5 - Transfer Learning
     autoencoder = torch.load('modelQ1.pth')
 
-    third_autoencoder = Autoencoder().to(device)
-    criterion = nn.L1Loss()
-    optimizer = optim.Adam(third_autoencoder.parameters(), lr=0.001)
+    third_classifier = Classifier().to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(third_classifier.parameters(), lr=0.001)
 
     print("Transfer Learning")
-    third_autoencoder.encoder = autoencoder.encoder
-    train_autoencoder(third_autoencoder, criterion, optimizer, train_loader_CLS, test_loader)
+    third_classifier.encoder = autoencoder.encoder
+    train_classifier(third_classifier, criterion, optimizer, train_loader_CLS, test_loader)
 
-    torch.save(third_autoencoder, 'modelQ5.pth')
+    torch.save(train_classifier, 'modelQ5.pth')
