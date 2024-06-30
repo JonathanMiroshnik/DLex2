@@ -333,5 +333,32 @@ For the transfer learning, after training the Classifier, we got the following
  graphs:
 \end_layout
 
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q5classifierLoss.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ex2Q5classifierAccuracy.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We can see that the trasfer learning allowed our few-examples dataset to
+ still learn quite a bit more than the situation in the previous section,
+ though a large amount of overfitting was seen because the weights already
+ held quite a bit of structure from the start.
+\end_layout
+
 \end_body
 \end_document

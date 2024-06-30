@@ -358,6 +358,9 @@ We can see that the trasfer learning allowed our few-examples dataset to
  still learn quite a bit more than the situation in the previous section,
  though a large amount of overfitting was seen because the weights already
  held quite a bit of structure from the start.
+ Because we set the classifier to train over this trained Encoder, and because
+ the Encoder already separated different shapes of digits in latent space,
+ it produced quicker training than a random Encoder.
 \end_layout
 
 \end_body
