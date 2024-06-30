@@ -594,5 +594,11 @@ u_{n-1} & \cdots & u_{1} & u_{n}
 
 \end_layout
 
+\begin_layout Standard
+The principle for larger dimensions is similar, using a higher dimensional
+ circulant tensor, such that any shift in one dimension of the tensor translates
+ to shifting the other dimensions the same way.
+\end_layout
+
 \end_body
 \end_document
